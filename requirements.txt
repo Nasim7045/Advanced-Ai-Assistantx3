@@ -1,1 +1,8 @@
 streamlit
+google-cloud-vision
+detectron2
+google-generativeai
+fitz
+transformers
+streamlit
+Pillow
