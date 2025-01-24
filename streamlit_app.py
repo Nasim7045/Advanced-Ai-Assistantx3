@@ -6,7 +6,7 @@ from PIL import Image  # For image processing
 from transformers import BlipProcessor, BlipForConditionalGeneration
 # it is best
 # Set up Google Generative AI API with a hardcoded API key
-api_key = "AIzaSyAT8CCucA7l5ZfFLJNDe8X082en6M-s0EE"
+api_key = "put APi key hERE"
 genai.configure(api_key=api_key)
 
 # Configure generation settings for the model
