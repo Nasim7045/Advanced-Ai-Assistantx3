@@ -1,7 +1,6 @@
 streamlit
-google-cloud-vision
 google-generativeai
-fitz
-transformers
-streamlit
 Pillow
+transformers
+torch
+pymupdf

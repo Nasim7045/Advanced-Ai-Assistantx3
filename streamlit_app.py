@@ -4,14 +4,16 @@ import fitz  # PyMuPDF
 import streamlit as st
 from PIL import Image  # For image processing
 from transformers import BlipProcessor, BlipForConditionalGeneration
-# it is best
+import torch
+import re
+
 # Set up Google Generative AI API with a hardcoded API key
-api_key = "put APi key hERE"
+api_key = "api-key-hereE"
 genai.configure(api_key=api_key)
 
 # Configure generation settings for the model
 generation_config = {
-    "temperature": 1.2,
+    "temperature": 0.7,  # Lower temperature for more precise responses
     "top_p": 0.9,
     "top_k": 50,
     "max_output_tokens": 8192,
@@ -26,27 +28,49 @@ model = genai.GenerativeModel(
 chat_session = model.start_chat(history=[])
 
 # Initialize the BLIP model and processor for image captioning
-processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-caption_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")  # Using the larger model for better accuracy
+caption_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
 
-# Function to extract text from PDF
+# Check if GPU is available and set device
+device = "cuda" if torch.cuda.is_available() else "cpu"
+caption_model = caption_model.to(device)
+
+# Function to extract text from PDF with improved accuracy
 def extract_text_from_pdf(pdf_file):
     text = ""
-    pdf_document = fitz.open(stream=pdf_file, filetype="pdf")
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document.load_page(page_num)
-        text += page.get_text()
+    try:
+        pdf_document = fitz.open(stream=pdf_file, filetype="pdf")
+        for page_num in range(pdf_document.page_count):
+            page = pdf_document.load_page(page_num)
+            text += page.get_text("text")  # Use "text" extraction mode for better accuracy
+    except Exception as e:
+        st.error(f"An error occurred while extracting text from the PDF: {e}")
     return text
 
-# Function to generate a caption from the image
+# Function to clean and preprocess text
+def clean_text(text):
+    # Remove extra spaces, newlines, and non-printable characters
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+# Function to generate a caption from the image with improved accuracy
 def generate_image_caption(image):
-    inputs = processor(image, return_tensors="pt")
-    outputs = caption_model.generate(**inputs)
-    caption = processor.decode(outputs[0], skip_special_tokens=True)
-    return caption
+    try:
+        # Convert image to RGB
+        image = image.convert("RGB")
+
+        # Preprocess the image and move tensors to the appropriate device
+        inputs = processor(image, return_tensors="pt").to(device)
+        outputs = caption_model.generate(**inputs, max_length=50, num_beams=5)  # Increase num_beams for better accuracy
+
+        # Decode the output
+        caption = processor.decode(outputs[0], skip_special_tokens=True)
+        return caption
+    except Exception as e:
+        return f"Error generating caption: {e}"
 
 # Streamlit UI with multiple options
-st.title("Multi-functional AI Assistant")
+st.title("Enhanced Multi-functional AI Assistant")
 
 # Tabs for different functionalities
 tab1, tab2, tab3 = st.tabs(["Document Analysis", "Image Recognition", "Prompting"])
@@ -60,8 +84,13 @@ with tab1:
         try:
             # Extract text from PDF
             pdf_text = extract_text_from_pdf(uploaded_pdf.read())
+            pdf_text = clean_text(pdf_text)  # Clean the extracted text
             st.success("PDF uploaded and text extracted successfully!")
             
+            # Display extracted text (optional)
+            if st.checkbox("Show extracted text"):
+                st.text_area("Extracted Text", pdf_text, height=300)
+
             # Input for questions
             question = st.text_input("Enter your question about the PDF content:")
 
@@ -92,12 +121,15 @@ with tab2:
 
             # Generate a description of the image
             image_caption = generate_image_caption(image)
-            st.write("Image Description:", image_caption)
+            if "Error" not in image_caption:
+                st.write("Image Description:", image_caption)
+            else:
+                st.error(image_caption)
 
             # Prompt for user questions about the image
             image_question = st.text_input("Ask a question about the image:")
 
-            if image_question:
+            if image_question and "Error" not in image_caption:
                 # Combine image description and question
                 input_text = f"Image Description: {image_caption}. Now answer this question: {image_question}"
                 response = chat_session.send_message(input_text)
