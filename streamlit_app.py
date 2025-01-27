@@ -8,7 +8,7 @@ import torch
 import re
 
 # Set up Google Generative AI API with a hardcoded API key
-api_key = "api-key-hereE"
+api_key = "Insert-Api-Key"
 genai.configure(api_key=api_key)
 
 # Configure generation settings for the model
@@ -70,7 +70,7 @@ def generate_image_caption(image):
         return f"Error generating caption: {e}"
 
 # Streamlit UI with multiple options
-st.title("Enhanced Multi-functional AI Assistant")
+st.title("Advanced Multi-functional AI Assistant")
 
 # Tabs for different functionalities
 tab1, tab2, tab3 = st.tabs(["Document Analysis", "Image Recognition", "Prompting"])
@@ -111,7 +111,7 @@ with tab1:
 
 # Tab 2: Image Recognition with Question-Answer Capability
 with tab2:
-    st.header("Image Recognition with Q&A")
+    st.header("Image Recognition and Object-Detection with Q&A")
     uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
     if uploaded_image:
