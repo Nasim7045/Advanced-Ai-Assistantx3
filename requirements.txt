@@ -4,3 +4,4 @@ Pillow
 transformers
 torch
 pymupdf
+pytesseract
