@@ -9,10 +9,11 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 import re
 import pytesseract  # OCR for images
+import webbrowser  # For search automation
 
 # Set up Google Generative AI API
 api_key = "api-key"
-genai.configure(api_key=api_key)
+genai.configure(api_key="OKBrother")
 
 # Configure generation settings
 generation_config = {
@@ -84,9 +85,23 @@ def extract_image_text(image):
     except Exception as e:
         return f"OCR error: {e}"
 
+# Search Automation Functions
+def search_youtube(query):
+    url = f"https://www.youtube.com/results?search_query={query}"
+    webbrowser.open(url)
+
+def search_google(query):
+    url = f"https://www.google.com/search?q={query}"
+    webbrowser.open(url)
+
+def search_instagram(username):
+    username = username.replace('@', '')  # Ensure the username is clean of "@"
+    url = f"https://www.instagram.com/{username}/"
+    webbrowser.open(url)
+
 # Streamlit UI
 st.title("Enhanced Multi-functional AI Assistant")
-tab1, tab2, tab3, tab4 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting", "Search Automation"])
 
 # Document Section (PDF & Word)
 with tab1:
@@ -114,7 +129,7 @@ with tab1:
             if question and 'doc_text' in st.session_state:
                 input_text = f"Document Content:\n{st.session_state['doc_text']}\n\nQuestion: {question}"
                 response = chat_session.send_message(input_text)
-                st.write("**Response:**", response.text)
+                st.write("*Response:*", response.text)
 
 # Excel Section
 with tab2:
@@ -129,14 +144,14 @@ with tab2:
             selected_sheet = st.selectbox("Select a sheet", sheet_names)
             df = excel_data[selected_sheet]
 
-            st.write(f"**Preview of {selected_sheet}:**")
+            st.write(f"*Preview of {selected_sheet}:*")
             st.dataframe(df)  # Display table
 
             question = st.text_input("Ask about this sheet:")
             if question:
                 input_text = f"Excel Sheet Data:\n{df.to_string(index=False)}\n\nQuestion: {question}"
                 response = chat_session.send_message(input_text)
-                st.write("**Response:**", response.text)
+                st.write("*Response:*", response.text)
 
 # Image Section
 with tab3:
@@ -161,15 +176,9 @@ with tab3:
         st.subheader("Image Insights")
         col1, col2 = st.columns(2)
         with col1:
-            st.write("**Visual Analysis:**", data['caption'])
+            st.write("*Visual Analysis:*", data['caption'])
         with col2:
-            st.write("**Extracted Text:**", data['ocr_text'] if data['ocr_text'] else "No text detected")
-
-        question = st.text_input("Ask about the image:")
-        if question:
-            context = f"Visual context: {data['caption']}. Text in image: {data['ocr_text']}"
-            response = chat_session.send_message(f"{context}\n\nQuestion: {question}")
-            st.write("**Response:**", response.text)
+            st.write("*Extracted Text:*", data['ocr_text'] if data['ocr_text'] else "No text detected")
 
 # General AI Chat
 with tab4:
@@ -177,4 +186,18 @@ with tab4:
     prompt = st.text_input("Ask anything:")
     if prompt:
         response = chat_session.send_message(prompt)
-        st.write("**Response:**", response.text)
+        st.write("*Response:*", response.text)
+
+# Search Automation
+with tab5:
+    st.header("Search Automation")
+    query = st.text_input("Enter the Username or your query")
+
+    if st.button("Search on YouTube"):
+        search_youtube(query)
+
+    if st.button("Search on Instagram"):
+        search_instagram(query)
+
+    if st.button("Search on Google"):
+        search_google(query)
