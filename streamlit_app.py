@@ -9,6 +9,7 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 import re
 import pytesseract  # OCR for images
+import webbrowser
 
 # Set up Google Generative AI API
 api_key = "api-key"
@@ -84,97 +85,87 @@ def extract_image_text(image):
     except Exception as e:
         return f"OCR error: {e}"
 
+# Function to search YouTube
+def search_youtube(query):
+    url = f"https://www.youtube.com/results?search_query={query}"
+    webbrowser.open(url)
+
+# Function to search Google
+def search_google(query):
+    url = f"https://www.google.com/search?q={query}"
+    webbrowser.open(url)
+
+# Function to search Instagram
+def search_instagram(username):
+    username = username.replace('@', '')  # Ensure the username is clean of "@"
+    url = f"https://www.instagram.com/{username}/"
+    webbrowser.open(url)
+
 # Streamlit UI
 st.title("Enhanced Multi-functional AI Assistant")
-tab1, tab2, tab3, tab4 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting", "Search Automation"])
 
 # Document Section (PDF & Word)
 with tab1:
     st.header("Document Analysis (PDF & Word)")
     uploaded_doc = st.file_uploader("Upload PDF or Word Document", type=["pdf", "docx"])
-
     if uploaded_doc:
         file_extension = uploaded_doc.name.split(".")[-1].lower()
-
+        extracted_text = ""
         if file_extension == "pdf":
             extracted_text = clean_text(extract_text_from_pdf(uploaded_doc.read()))
         elif file_extension == "docx":
             extracted_text = clean_text(extract_text_from_word(uploaded_doc))
-        else:
-            extracted_text = ""
-
         if extracted_text:
             st.session_state['doc_text'] = extracted_text
             st.success(f"{uploaded_doc.name} processed successfully!")
-
             if st.checkbox("Show extracted text"):
                 st.text_area("Extracted Text", extracted_text, height=300)
-
             question = st.text_input("Ask about the document:")
-            if question and 'doc_text' in st.session_state:
-                input_text = f"Document Content:\n{st.session_state['doc_text']}\n\nQuestion: {question}"
-                response = chat_session.send_message(input_text)
+            if question:
+                response = chat_session.send_message(f"{extracted_text}\n\nQuestion: {question}")
                 st.write("**Response:**", response.text)
 
 # Excel Section
 with tab2:
     st.header("Excel Sheet Analysis")
     uploaded_excel = st.file_uploader("Upload Excel File", type=["xls", "xlsx"])
-
     if uploaded_excel:
         excel_data = extract_text_from_excel(uploaded_excel)
-
         if excel_data:
             sheet_names = list(excel_data.keys())
             selected_sheet = st.selectbox("Select a sheet", sheet_names)
             df = excel_data[selected_sheet]
-
-            st.write(f"**Preview of {selected_sheet}:**")
-            st.dataframe(df)  # Display table
-
+            st.dataframe(df)
             question = st.text_input("Ask about this sheet:")
             if question:
-                input_text = f"Excel Sheet Data:\n{df.to_string(index=False)}\n\nQuestion: {question}"
-                response = chat_session.send_message(input_text)
+                response = chat_session.send_message(f"{df.to_string(index=False)}\n\nQuestion: {question}")
                 st.write("**Response:**", response.text)
 
 # Image Section
 with tab3:
     st.header("Image Analysis")
     uploaded_image = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
-    
     if uploaded_image:
         image = Image.open(uploaded_image)
         st.image(image, use_column_width=True)
-
-        if 'prev_image' not in st.session_state or st.session_state['prev_image'] != uploaded_image.name:
-            st.session_state['image_data'] = {}  # Reset stored image data
-            st.session_state['prev_image'] = uploaded_image.name  # Store current image name
-
-        if not st.session_state.get('image_data'):
-            with st.spinner("Analyzing image..."):
-                caption = generate_image_caption(image)
-                ocr_text = clean_text(extract_image_text(image))
-                st.session_state['image_data'] = {'caption': caption, 'ocr_text': ocr_text}
-
-        data = st.session_state['image_data']
+        caption = generate_image_caption(image)
+        ocr_text = clean_text(extract_image_text(image))
         st.subheader("Image Insights")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("**Visual Analysis:**", data['caption'])
-        with col2:
-            st.write("**Extracted Text:**", data['ocr_text'] if data['ocr_text'] else "No text detected")
-
+        st.write("**Visual Analysis:**", caption)
+        st.write("**Extracted Text:**", ocr_text if ocr_text else "No text detected")
         question = st.text_input("Ask about the image:")
         if question:
-            context = f"Visual context: {data['caption']}. Text in image: {data['ocr_text']}"
-            response = chat_session.send_message(f"{context}\n\nQuestion: {question}")
+            response = chat_session.send_message(f"Visual context: {caption}. Text in image: {ocr_text}\n\nQuestion: {question}")
             st.write("**Response:**", response.text)
 
-# General AI Chat
-with tab4:
-    st.header("General Prompting")
-    prompt = st.text_input("Ask anything:")
-    if prompt:
-        response = chat_session.send_message(prompt)
-        st.write("**Response:**", response.text)
+# Search Automation
+with tab5:
+    st.header("Search Automation")
+    query = st.text_input("Enter the Username or your query")
+    if st.button("Search on YouTube"):
+        search_youtube(query)
+    if st.button("Search on Instagram"):
+        search_instagram(query)
+    if st.button("Search on Google"):
+        search_google(query)
