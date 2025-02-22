@@ -13,7 +13,7 @@ import webbrowser  # For search automation
 
 # Set up Google Generative AI API
 api_key = "api-key"
-genai.configure(api_key="OKBrother")
+genai.configure(api_key="AIzaSyAT8CCucA7l5ZfFLJNDe8X082en6M-s0EE")
 
 # Configure generation settings
 generation_config = {
