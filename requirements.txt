@@ -6,3 +6,4 @@ torch
 pymupdf
 pytesseract
 python-docx
+openpyxl
