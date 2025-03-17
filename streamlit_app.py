@@ -12,7 +12,7 @@ import pytesseract  # OCR for images
 import webbrowser  # For search automation
 
 # Set up Google Generative AI API
-genai.configure(api_key="Fixed issue of prompt in Ai assistant")
+genai.configure(api_key="fill-API-key")
 
 # Configure generation settings
 generation_config = {
