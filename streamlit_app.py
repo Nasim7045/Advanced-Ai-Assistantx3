@@ -9,7 +9,7 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 import re
 import urllib.parse
-import easyocr 
+import easyocr  # NEW: EasyOCR for OCR
 import webbrowser
 
 # Set up Google Generative AI API
