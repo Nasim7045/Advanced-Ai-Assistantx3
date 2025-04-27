@@ -8,11 +8,12 @@ from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 import torch
 import re
-import easyocr  # NEW: EasyOCR for OCR
+import urllib.parse
+import easyocr 
 import webbrowser
 
 # Set up Google Generative AI API
-genai.configure(api_key="API bxer")
+genai.configure(api_key="API-key")
 
 generation_config = {
     "temperature": 0.7,
@@ -92,9 +93,19 @@ def process_image_question(caption, ocr_text, question):
     response = chat_session.send_message(input_text)
     return response.text
 
+# search automation
+def search_youtube(query):
+    webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
+
+def search_google(query):
+    webbrowser.open(f"https://www.google.com/search?q={query}")
+
+def search_instagram(username):
+    webbrowser.open(f"https://www.instagram.com/{username.replace('@', '')}/")
+
 # Streamlit UI
-st.title("Enhanced Multi-functional AI Assistant")
-tab1, tab2, tab3, tab4 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting"])
+st.title("AX*3 Advanced Ai Assistant")
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Documents (PDF, Word)", "Excel", "Images", "Prompting","Search Automation"])
 
 # Tab 1: Documents
 with tab1:
@@ -169,3 +180,58 @@ with tab4:
     if prompt:
         response = chat_session.send_message(prompt)
         st.write("*Response:*", response.text)
+
+
+with tab5:
+    st.header("Search Automation")
+    
+    search_query = st.text_input("Enter your search query or username:", key="search_query")
+    
+    if search_query:
+        encoded_query = urllib.parse.quote(search_query)
+        
+        st.write("### Quick Search Links")
+        
+        youtube_url = f"https://www.youtube.com/results?search_query={encoded_query}"
+        instagram_url = f"https://www.instagram.com/{search_query.replace('@', '')}/"
+        google_url = f"https://www.google.com/search?q={encoded_query}"
+        
+        # Create columns for the search options
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown(f"[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)]({youtube_url})")
+            
+        with col2:
+            st.markdown(f"[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)]({instagram_url})")
+            
+        with col3:
+            st.markdown(f"[![Google](https://img.shields.io/badge/Google-4285F4?style=for-the-badge&logo=google&logoColor=white)]({google_url})")
+        
+        with st.expander("Direct Browser Opening (Local Only)"):
+            st.warning("Note: This option only works when running the app locally on your machine.")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            if col1.button("Open YouTube"):
+                search_youtube(encoded_query)
+                
+            if col2.button("Open Instagram"):
+                search_instagram(search_query)
+                
+            if col3.button("Open Google"):
+                search_google(encoded_query)
+        
+        # Additional search options
+        with st.expander("More search options"):
+            col1, col2 = st.columns(2)
+            
+            twitter_url = f"https://twitter.com/search?q={encoded_query}"
+            linkedin_url = f"https://www.linkedin.com/search/results/all/?keywords={encoded_query}"
+            github_url = f"https://github.com/search?q={encoded_query}"
+            amazon_url = f"https://www.amazon.in/s?k={encoded_query}"
+            
+            col1.markdown(f"[![Twitter/X](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)]({twitter_url})")
+            col1.markdown(f"[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)]({linkedin_url})")
+            col2.markdown(f"[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)]({github_url})")
+            col2.markdown(f"[![Amazon](https://img.shields.io/badge/Amazon-FF9900?style=for-the-badge&logo=amazon&logoColor=white)]({amazon_url})")
